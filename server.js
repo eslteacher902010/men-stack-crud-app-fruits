@@ -1,32 +1,45 @@
-//server.js
-const dotenv = require("dotenv"); // require package
-dotenv.config(); // Loads the environment variables from .env file
+const dotenv = require("dotenv"); 
+dotenv.config(); 
+
 const express = require("express");
 const mongoose = require("mongoose");
 
 const Fruit = require("./models/fruit.js");
 
 
-const app = express();
+const app = express();              // <-- create app first order matters
+app.set("view engine", "ejs");      // <-- then set view engine
 
 mongoose.connect(process.env.MONGODB_URI);
-// log connection status to terminal on start
+
 mongoose.connection.on("connected", () => {
   console.log(`Connected to MongoDB ${mongoose.connection.name}.`);
 });
 
+app.use(express.urlencoded({ extended: false }));
 
-// GET /fruits/new
+
+app.get("/", async (req, res) => {
+  res.send("hello, friend!");
+  // if you want to render instead, remove res.send:
+  // res.render("index");
+});
+
 app.get("/fruits/new", (req, res) => {
-  res.render("fruits/new.ejs");
+  res.render("fruits/new"); // don't need ".ejs"
+});
+
+app.post("/fruits", async (req, res) => {
+  if (req.body.isReadyToEat === "on") {
+    req.body.isReadyToEat = true;
+  } else {
+    req.body.isReadyToEat = false;
+  }
+  await Fruit.create(req.body);
+  res.redirect("/fruits/new");
 });
 
 
-// app.get("/", async (req, res) => {
-//   res.send("hello, friend!");
-//   res.render("index.ejs");
-// });
-
 app.listen(3000, () => {
-  console.log('Listening on port 3000');
+  console.log("Listening on port 3000");
 });
