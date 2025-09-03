@@ -19,16 +19,31 @@ mongoose.connection.on("connected", () => {
 app.use(express.urlencoded({ extended: false }));
 
 
-app.get("/", async (req, res) => {
-  res.send("hello, friend!");
-  // if you want to render instead, remove res.send:
-  // res.render("index");
+// app.get("/", async (req, res) => {
+//   res.send("hello, fruitcake!");
+//   // if you want to render instead, remove res.send:
+//   // res.render("index");
+// });
+
+app.get("/", (req, res) => {
+  res.render("index");
 });
+
+
+// GET /fruits
+app.get("/fruits", async (req, res) => {
+  const allFruits = await Fruit.find();
+  res.render("fruits/index.ejs", { fruits: allFruits });
+});
+
 
 app.get("/fruits/new", (req, res) => {
   res.render("fruits/new"); // don't need ".ejs"
 });
 
+// server.js
+
+// POST /fruits
 app.post("/fruits", async (req, res) => {
   if (req.body.isReadyToEat === "on") {
     req.body.isReadyToEat = true;
@@ -36,8 +51,15 @@ app.post("/fruits", async (req, res) => {
     req.body.isReadyToEat = false;
   }
   await Fruit.create(req.body);
-  res.redirect("/fruits/new");
+  res.redirect("/fruits"); // redirect to index fruits
 });
+
+///// or you could use a ternary operator !
+// req.body.readyToEat === 'on' ? req.body.readyToEat = true : req.body.readyToEat = false;
+
+// await Fruit.create(req.body);
+// res.redirect('/fruits/new');
+
 
 
 app.listen(3000, () => {
