@@ -3,109 +3,74 @@ dotenv.config();
 
 const express = require("express");
 const mongoose = require("mongoose");
-const path = require("path");
+const path = require("path"); // <-- put this back
 
-const methodOverride = require("method-override"); // new
-const morgan = require("morgan"); //new
+const methodOverride = require("method-override");
+const morgan = require("morgan");
 
 const Fruit = require("./models/fruit.js");
 
-
-const app = express();              // <-- create app first order matters
-app.set("view engine", "ejs");      // <-- then set view engine
+const app = express();
+app.set("view engine", "ejs");
 
 mongoose.connect(process.env.MONGODB_URI);
-
 mongoose.connection.on("connected", () => {
   console.log(`Connected to MongoDB ${mongoose.connection.name}.`);
 });
- app.use(express.static(path.join(__dirname, "public")));
 
+// serve static files like CSS/images
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.urlencoded({ extended: false }));
-app.use(methodOverride("_method")); // new
-app.use(morgan("dev")); //new
-
-
-
-// app.get("/", async (req, res) => {
-//   res.send("hello, fruitcake!");
-//   // if you want to render instead, remove res.send:
-//   // res.render("index");
-// });
+app.use(methodOverride("_method"));
+app.use(morgan("dev"));
 
 app.get("/", (req, res) => {
   res.render("index");
 });
 
-
-// GET /fruits
+// INDEX
 app.get("/fruits", async (req, res) => {
   const allFruits = await Fruit.find();
-  res.render("fruits/index.ejs", { fruits: allFruits });
+  res.render("fruits/index", { fruits: allFruits });
 });
 
-
+// NEW
 app.get("/fruits/new", (req, res) => {
-  res.render("fruits/new"); // don't need ".ejs"
+  res.render("fruits/new");
 });
 
-
+// SHOW
 app.get("/fruits/:fruitId", async (req, res) => {
   const foundFruit = await Fruit.findById(req.params.fruitId);
-  res.render("fruits/show.ejs", { fruit: foundFruit });
+  res.render("fruits/show", { fruit: foundFruit });
 });
 
-
-// POST /fruits
+// CREATE
 app.post("/fruits", async (req, res) => {
-  if (req.body.isReadyToEat === "on") {
-    req.body.isReadyToEat = true;
-  } else {
-    req.body.isReadyToEat = false;
-  }
+  req.body.isReadyToEat = req.body.isReadyToEat === "on";
   await Fruit.create(req.body);
-  res.redirect("/fruits"); // redirect to index fruits
+  res.redirect("/fruits");
 });
 
-///// or you could use a ternary operator !
-// req.body.readyToEat === 'on' ? req.body.readyToEat = true : req.body.readyToEat = false;
-
-// await Fruit.create(req.body);
-// res.redirect('/fruits/new');
-
-
-
+// DELETE
 app.delete("/fruits/:fruitId", async (req, res) => {
   await Fruit.findByIdAndDelete(req.params.fruitId);
   res.redirect("/fruits");
 });
 
-// GET localhost:3000/fruits/:fruitId/edit
+// EDIT
 app.get("/fruits/:fruitId/edit", async (req, res) => {
   const foundFruit = await Fruit.findById(req.params.fruitId);
-  res.render("fruits/edit.ejs", {
-    fruit: foundFruit,
-  });
+  res.render("fruits/edit", { fruit: foundFruit });
 });
 
-
+// UPDATE
 app.put("/fruits/:fruitId", async (req, res) => {
-  // Handle the 'isReadyToEat' checkbox data
-  if (req.body.isReadyToEat === "on") {
-    req.body.isReadyToEat = true;
-  } else {
-    req.body.isReadyToEat = false;
-  }
-  
-  // Update the fruit in the database
+  req.body.isReadyToEat = req.body.isReadyToEat === "on";
   await Fruit.findByIdAndUpdate(req.params.fruitId, req.body);
-
-  // Redirect to the fruit's show page to see the updates
   res.redirect(`/fruits/${req.params.fruitId}`);
 });
-
-
 
 app.listen(3000, () => {
   console.log("Listening on port 3000");
